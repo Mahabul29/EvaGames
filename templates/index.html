@@ -1,0 +1,40 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>🎲 Ludo Game</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+</head>
+<body>
+    <h1 class="game-title">🎲 LUDO</h1>
+
+    <div class="game-container">
+        <div class="board-wrapper">
+            <div class="ludo-board" id="ludoBoard"></div>
+        </div>
+
+        <div class="side-panel">
+            <div class="panel-card">
+                <h3>👥 Players</h3>
+                <div id="playersList"></div>
+            </div>
+
+            <div class="panel-card">
+                <h3>🎲 Dice</h3>
+                <div class="dice-container">
+                    <div class="dice" id="dice">?</div>
+                    <button class="roll-btn" id="rollBtn">Roll Dice</button>
+                </div>
+            </div>
+
+            <div class="panel-card">
+                <h3>📜 Game Log</h3>
+                <div class="game-log" id="gameLog"></div>
+            </div>
+        </div>
+    </div>
+
+    <script src="{{ url_for('static', filename='js/game.js') }}"></script>
+</body>
+</html>
