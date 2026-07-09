@@ -162,7 +162,6 @@
         el.className = "token tok-" + p.color;
         el.style.gridRowStart = CENTER[0] + 1;
         el.style.gridColumnStart = CENTER[1] + 1;
-        const spread = 16 * finIdx;
         el.style.transform = `scale(0.55) translate(${(finIdx % 4) * 10 - 15}%, ${Math.floor(finIdx / 4) * 10 - 15}%)`;
         boardEl.appendChild(el);
         finIdx++;
@@ -170,31 +169,101 @@
     });
   }
 
-  /* ================= HUD / LOG ================= */
+  /* ================= PER-PLAYER DICE ROWS ================= */
 
-  const hudPlayersEl = document.getElementById("hud-players");
-  const turnBannerEl = document.getElementById("turn-banner");
-  const logListEl = document.getElementById("log-list");
-  const diceEl = document.getElementById("dice");
-  const diceHintEl = document.getElementById("dice-hint");
+  const playerDiceListEl = document.getElementById("player-dice-list");
+  let diceRowRefs = []; // { rowEl, diceEl, hintEl }
 
-  function renderHud() {
-    hudPlayersEl.innerHTML = "";
-    state.players.forEach((p, i) => {
-      const chip = document.createElement("div");
-      chip.className = "hud-chip" + (i === state.turn ? " current" : "") + (p.finishedCount === 4 ? " done" : "");
-      chip.innerHTML = `<span class="dot" style="background:var(--${p.color})"></span>${p.name}`;
-      hudPlayersEl.appendChild(chip);
-    });
-    const cur = state.players[state.turn];
-    turnBannerEl.textContent = state.gameOver ? "Game over" : `${cur.name}'s turn`;
+  const PIP_LAYOUT = {
+    1: ["p22"],
+    2: ["p11", "p33"],
+    3: ["p11", "p22", "p33"],
+    4: ["p11", "p13", "p31", "p33"],
+    5: ["p11", "p13", "p22", "p31", "p33"],
+    6: ["p11", "p13", "p21", "p23", "p31", "p33"],
+  };
+
+  function setDiceFace(diceEl, value) {
+    if (!value) { diceEl.textContent = "?"; return; }
+    diceEl.innerHTML = `<div class="dice-face">${PIP_LAYOUT[value].map(p => `<span class="pip ${p}"></span>`).join("")}</div>`;
   }
 
-  function log(msg) {
-    const p = document.createElement("p");
-    p.textContent = msg;
-    logListEl.prepend(p);
-    while (logListEl.childElementCount > 40) logListEl.removeChild(logListEl.lastChild);
+  function buildPlayerDiceRows() {
+    playerDiceListEl.innerHTML = "";
+    diceRowRefs = state.players.map((p, i) => {
+      const row = document.createElement("div");
+      row.className = "player-die-row";
+
+      const dot = document.createElement("span");
+      dot.className = "pdr-dot";
+      dot.style.background = `var(--${p.color})`;
+
+      const name = document.createElement("span");
+      name.className = "pdr-name";
+      name.textContent = p.name;
+
+      const hint = document.createElement("span");
+      hint.className = "pdr-hint";
+
+      const diceBtn = document.createElement("button");
+      diceBtn.className = "mini-dice";
+      diceBtn.setAttribute("aria-label", "Roll dice for " + p.name);
+      diceBtn.textContent = "?";
+      diceBtn.addEventListener("click", () => handleRoll(i));
+
+      row.appendChild(dot);
+      row.appendChild(name);
+      row.appendChild(hint);
+      row.appendChild(diceBtn);
+      playerDiceListEl.appendChild(row);
+
+      return { rowEl: row, diceEl: diceBtn, hintEl: hint };
+    });
+  }
+
+  function updateDiceUI() {
+    state.players.forEach((p, i) => {
+      const ref = diceRowRefs[i];
+      if (!ref) return;
+      const isCurrent = i === state.turn;
+      const isHumanTurn = isCurrent && p.kind === "human" && !state.gameOver;
+
+      ref.rowEl.classList.toggle("current", isCurrent && !state.gameOver);
+      ref.rowEl.classList.toggle("done", p.finishedCount === 4);
+
+      ref.diceEl.disabled = !(isHumanTurn && state.canRoll);
+      setDiceFace(ref.diceEl, isCurrent ? state.dice : null);
+
+      if (state.gameOver) {
+        ref.hintEl.textContent = "";
+      } else if (!isCurrent) {
+        ref.hintEl.textContent = "";
+      } else if (p.kind !== "human") {
+        ref.hintEl.textContent = "thinking…";
+      } else if (state.canRoll) {
+        ref.hintEl.textContent = "your turn — roll";
+      } else if (state.movableTokens.length) {
+        ref.hintEl.textContent = "tap a token";
+      } else {
+        ref.hintEl.textContent = "passing…";
+      }
+    });
+  }
+
+  function rollDice(diceEl, callback) {
+    diceEl.classList.add("rolling");
+    let ticks = 0;
+    const spin = setInterval(() => {
+      setDiceFace(diceEl, 1 + Math.floor(Math.random() * 6));
+      ticks++;
+      if (ticks > 6) {
+        clearInterval(spin);
+        diceEl.classList.remove("rolling");
+        const value = 1 + Math.floor(Math.random() * 6);
+        setDiceFace(diceEl, value);
+        callback(value);
+      }
+    }, 70);
   }
 
   /* ================= GAME LOGIC ================= */
@@ -218,7 +287,6 @@
     const wasYard = token.step === -1;
     token.step = wasYard ? 0 : token.step + diceValue;
 
-    let captured = false;
     if (token.step <= 50) {
       const commonIdx = (START_INDEX[player.color] + token.step) % 52;
       if (!SAFE_INDEXES.has(commonIdx)) {
@@ -229,8 +297,6 @@
               const otherIdx = (START_INDEX[op.color] + ot.step) % 52;
               if (otherIdx === commonIdx) {
                 ot.step = -1;
-                captured = true;
-                log(`${player.name} sent a ${op.name} token home!`);
               }
             }
           });
@@ -240,14 +306,7 @@
 
     if (token.step === 56) {
       player.finishedCount++;
-      log(`${player.name} got a token all the way home! (${player.finishedCount}/4)`);
-    } else if (wasYard) {
-      log(`${player.name} brought a token out.`);
-    } else {
-      log(`${player.name} moved a token ${diceValue}.`);
     }
-
-    return captured;
   }
 
   function checkWin() {
@@ -268,7 +327,6 @@
     state.dice = null;
     state.movableTokens = [];
     state.canRoll = true;
-    renderHud();
     renderTokens();
     updateDiceUI();
     maybeRunAiTurn();
@@ -276,60 +334,16 @@
 
   /* ================= DICE / TURN FLOW ================= */
 
-  const PIP_LAYOUT = {
-    1: ["p22"],
-    2: ["p11", "p33"],
-    3: ["p11", "p22", "p33"],
-    4: ["p11", "p13", "p31", "p33"],
-    5: ["p11", "p13", "p22", "p31", "p33"],
-    6: ["p11", "p13", "p21", "p23", "p31", "p33"],
-  };
-
-  function setDiceFace(value) {
-    if (!value) { diceEl.textContent = "?"; return; }
-    diceEl.innerHTML = `<div class="dice-face">${PIP_LAYOUT[value].map(p => `<span class="pip ${p}"></span>`).join("")}</div>`;
-  }
-
-  function updateDiceUI() {
-    const cur = state.players[state.turn];
-    const isHumanTurn = cur.kind === "human" && !state.gameOver;
-    diceEl.disabled = !(isHumanTurn && state.canRoll);
-    setDiceFace(state.dice);
-    diceHintEl.textContent = state.gameOver
-      ? "Thanks for playing!"
-      : !isHumanTurn
-        ? `${cur.name} is thinking…`
-        : state.canRoll
-          ? "Tap the die to roll"
-          : state.movableTokens.length
-            ? "Tap a glowing token to move it"
-            : "No moves — passing turn…";
-  }
-
-  function rollDice(callback) {
-    diceEl.classList.add("rolling");
-    let ticks = 0;
-    const spin = setInterval(() => {
-      setDiceFace(1 + Math.floor(Math.random() * 6));
-      ticks++;
-      if (ticks > 6) {
-        clearInterval(spin);
-        diceEl.classList.remove("rolling");
-        const value = 1 + Math.floor(Math.random() * 6);
-        setDiceFace(value);
-        callback(value);
-      }
-    }, 70);
-  }
-
-  function handleRoll() {
+  function handleRoll(playerIndex) {
     if (state.gameOver || !state.canRoll) return;
+    if (playerIndex !== state.turn) return; // not this player's turn
     const cur = state.players[state.turn];
     if (cur.kind !== "human") return;
     state.canRoll = false;
     updateDiceUI();
 
-    rollDice(value => {
+    const diceEl = diceRowRefs[playerIndex].diceEl;
+    rollDice(diceEl, value => {
       afterRoll(value);
     });
   }
@@ -337,12 +351,10 @@
   function afterRoll(value) {
     const cur = state.players[state.turn];
     state.dice = value;
-    log(`${cur.name} rolled a ${value}.`);
 
     if (value === 6) {
       state.consecutiveSixes++;
       if (state.consecutiveSixes === 3) {
-        log(`Three 6's in a row — ${cur.name} forfeits the turn.`);
         setTimeout(() => nextTurn(false), 700);
         return;
       }
@@ -352,7 +364,6 @@
     state.movableTokens = moves;
 
     if (moves.length === 0) {
-      log(`No moves available for ${cur.name}.`);
       updateDiceUI();
       setTimeout(() => nextTurn(value === 6), 700);
       return;
@@ -384,7 +395,7 @@
     applyMove(playerIndex, tokenIndex, diceValue);
     state.movableTokens = [];
     renderTokens();
-    renderHud();
+    updateDiceUI();
 
     if (checkWin()) return;
 
@@ -436,8 +447,9 @@
     if (cur.kind !== "ai") return;
     state.canRoll = false;
     updateDiceUI();
+    const diceEl = diceRowRefs[state.turn].diceEl;
     setTimeout(() => {
-      rollDice(value => afterRoll(value));
+      rollDice(diceEl, value => afterRoll(value));
     }, 500);
   }
 
@@ -449,7 +461,7 @@
   function showWin(winner) {
     winText.textContent = `${winner.name} wins!`;
     winOverlay.classList.remove("hidden");
-    renderHud();
+    updateDiceUI();
   }
 
   document.getElementById("win-restart").addEventListener("click", () => {
@@ -525,13 +537,6 @@
     }
   });
 
-  window.addEventListener("error", e => {
-    // Surfaces script errors on mobile where the console isn't reachable.
-    if (!setupView.classList.contains("hidden") || !gameView.classList.contains("hidden")) {
-      console.error(e.error || e.message);
-    }
-  });
-
   document.getElementById("quit-btn").addEventListener("click", goToSetup);
 
   function goToSetup() {
@@ -543,13 +548,11 @@
     state = buildInitialState(colors, kinds, names);
     setupView.classList.add("hidden");
     gameView.classList.remove("hidden");
-    logListEl.innerHTML = "";
     buildBoardDOM();
     renderYardLabels();
-    renderHud();
+    buildPlayerDiceRows();
     renderTokens();
     updateDiceUI();
-    log("New game started. Roll a 6 to bring a token out.");
     maybeRunAiTurn();
   }
 
@@ -577,7 +580,5 @@
       boardEl.appendChild(el);
     });
   }
-
-  diceEl.addEventListener("click", handleRoll);
 })();
-
+      
