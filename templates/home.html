@@ -11,7 +11,9 @@
 </head>
 <body class="ludo-body">
 
-<a class="back-link" href="/">← EvaGames</a>
+<header class="ludo-header">
+  <a class="back-link" href="/" id="back-link">← EvaGames</a>
+</header>
 
 <!-- ============ SETUP ============ -->
 <section id="setup-view" class="setup-view">
@@ -71,10 +73,18 @@
   </div>
 
   <div class="board-wrap">
-    <div id="board" class="board"></div>
-  </div>
+    <div class="corner-row corner-row-top">
+      <div class="corner-panel hidden" id="corner-red"></div>
+      <div class="corner-panel hidden" id="corner-green"></div>
+    </div>
 
-  <div class="player-dice-list" id="player-dice-list"></div>
+    <div id="board" class="board"></div>
+
+    <div class="corner-row corner-row-bottom">
+      <div class="corner-panel hidden" id="corner-blue"></div>
+      <div class="corner-panel hidden" id="corner-yellow"></div>
+    </div>
+  </div>
 
 </section>
 
@@ -90,4 +100,5 @@
 <script src="{{ url_for('static', filename='js/ludo.js') }}"></script>
 </body>
   </html>
+
   
