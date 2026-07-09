@@ -54,7 +54,6 @@
   border-radius: 12px;
   padding: .55rem .8rem;
   border: 1.5px solid rgba(212,162,76,.15);
-  animation: seatIn .25s ease both;
 }
 .seat-row .seat-left{ display:flex; align-items:center; gap:.6rem; }
 .seat-dot{ width:16px; height:16px; border-radius:50%; }
@@ -79,22 +78,9 @@
 
 /* ===== Game view ===== */
 .hidden{ display:none !important; }
-.game-view{ max-width: 480px; margin: 0 auto; padding: .8rem .7rem 2rem; animation: viewFadeIn .3s ease both; }
+.game-view{ max-width: 480px; margin: 0 auto; padding: .8rem .7rem 2rem; }
 
-.hud{ display:flex; align-items:center; justify-content:space-between; margin-bottom:.6rem; }
-.hud-players{ display:flex; gap:.4rem; flex-wrap:wrap; }
-.hud-chip{
-  display:flex; align-items:center; gap:.35rem;
-  background: var(--panel);
-  border-radius: 999px;
-  padding: .3rem .6rem .3rem .4rem;
-  font-size:.72rem; font-weight:700;
-  border: 1.5px solid transparent;
-  transition: border-color .2s ease, box-shadow .2s ease, opacity .2s ease;
-}
-.hud-chip .dot{ width:10px; height:10px; border-radius:50%; }
-.hud-chip.current{ border-color: var(--gold); box-shadow: 0 0 0 2px rgba(212,162,76,.2); }
-.hud-chip.done{ opacity:.4; }
+.hud-top{ display:flex; justify-content:flex-end; margin-bottom:.5rem; }
 .hud-quit{
   background: var(--panel); border:none; color: var(--paper);
   width: 34px; height:34px; border-radius:50%; font-size:1rem;
@@ -115,7 +101,6 @@
   overflow: hidden;
   position: relative;
   box-shadow: 0 16px 40px rgba(0,0,0,.4);
-  animation: boardFadeIn .4s ease both;
 }
 .cell{ position:relative; border: .5px solid rgba(18,16,28,.06); }
 .cell.yard-red{ background: color-mix(in srgb, var(--red) 22%, var(--paper)); }
@@ -165,7 +150,7 @@
 .arrow-yellow{ color: color-mix(in srgb, var(--yellow) 70%, #7a5b00); }
 .arrow-blue{ color: var(--blue); }
 
-/* ===== Tokens (fixed: relative to own grid cell, not the whole board) ===== */
+/* ===== Tokens (fixed sizing bug; no per-render pop animation to avoid flashing) ===== */
 .token{
   position: relative;
   width: 66%;
@@ -175,9 +160,7 @@
   border-radius: 50%;
   border: 2.5px solid #fff;
   box-shadow: 0 3px 5px rgba(0,0,0,.45), inset 0 -3px 5px rgba(0,0,0,.25), inset 0 2px 3px rgba(255,255,255,.6);
-  transition: transform .2s ease;
   z-index: 5;
-  animation: tokenPop .22s ease both;
 }
 .token.tok-red{ background: radial-gradient(circle at 35% 30%, #ff8d84, var(--red)); }
 .token.tok-green{ background: radial-gradient(circle at 35% 30%, #6fd6a0, var(--green)); }
@@ -186,29 +169,42 @@
 .token.movable{
   box-shadow: 0 0 0 3px var(--gold), 0 2px 6px rgba(0,0,0,.4);
   cursor:pointer;
-  animation: tokenPop .22s ease both, tokenPulse 1.1s ease-in-out infinite;
 }
 .token .count{
   position:absolute; inset:0; display:flex; align-items:center; justify-content:center;
   color:#fff; font-size: .55rem; font-weight:800; text-shadow: 0 1px 2px rgba(0,0,0,.5);
 }
 
-.dice-dock{ display:flex; flex-direction:column; align-items:center; gap:.5rem; margin: .6rem 0 1rem; }
-.turn-banner{
-  font-family: var(--display); font-weight:700; font-size:1rem;
-  background: var(--panel); padding:.4rem 1rem; border-radius:999px;
-  transition: transform .15s ease;
+/* ===== Per-player dice rows ===== */
+.player-dice-list{ display:flex; flex-direction:column; gap:.5rem; margin-top:.8rem; }
+.player-die-row{
+  display:flex; align-items:center; gap:.6rem;
+  background: var(--panel);
+  border-radius: 14px;
+  padding:.6rem .8rem;
+  border: 1.5px solid transparent;
+  transition: border-color .2s ease, opacity .2s ease;
 }
-.dice-row{ display:flex; flex-direction:column; align-items:center; gap:.3rem; }
-.dice{
-  width:64px; height:64px; border-radius:16px;
+.player-die-row.current{ border-color: var(--gold); box-shadow: 0 0 0 2px rgba(212,162,76,.15); }
+.player-die-row.done{ opacity:.45; }
+
+.pdr-dot{ width:14px; height:14px; border-radius:50%; flex-shrink:0; }
+.pdr-name{ font-weight:700; font-size:.9rem; flex:1; }
+.pdr-hint{ font-size:.7rem; color: var(--muted); margin-right:.4rem; }
+
+.mini-dice{
+  width:44px; height:44px; border-radius:12px;
   background: var(--paper); color: var(--ink);
-  font-size:1.6rem; font-weight:800; border: none;
-  box-shadow: 0 10px 20px rgba(0,0,0,.35);
-  padding: 9px;
-  transition: transform .1s ease;
+  font-size:1.1rem; font-weight:800; border:none;
+  padding:6px;
+  box-shadow: 0 4px 10px rgba(0,0,0,.3);
+  flex-shrink:0;
+  transition: transform .1s ease, opacity .2s ease;
 }
-.dice:active:not(:disabled){ transform: scale(.92); }
+.mini-dice:disabled{ opacity:.35; }
+.mini-dice:active:not(:disabled){ transform: scale(.9); }
+.mini-dice.rolling{ animation: shake .5s ease; }
+
 .dice-face{
   width:100%; height:100%;
   display:grid;
@@ -220,68 +216,21 @@
 .dice-face .pip.p22{grid-area:2/2;}
 .dice-face .pip.p21{grid-area:2/1;} .dice-face .pip.p23{grid-area:2/3;}
 .dice-face .pip.p31{grid-area:3/1;} .dice-face .pip.p33{grid-area:3/3;}
-.dice:disabled{ opacity:.5; }
-.dice.rolling{ animation: shake .5s ease; }
+
 @keyframes shake{
   0%,100%{ transform: rotate(0); }
   25%{ transform: rotate(-14deg); }
   75%{ transform: rotate(14deg); }
 }
-.dice-hint{ font-size:.75rem; color: var(--muted); margin:0; }
-
-.log-panel{ background: var(--panel); border-radius:14px; padding:.8rem .9rem; }
-.log-label{ margin:0 0 .4rem; font-size:.75rem; color: var(--gold-soft); font-weight:700; }
-.log-list{ max-height: 110px; overflow-y:auto; display:flex; flex-direction:column-reverse; gap:.25rem; }
-.log-list p{ margin:0; font-size:.78rem; color: var(--muted); animation: logIn .18s ease both; }
 
 .win-overlay{
   position:fixed; inset:0; background: rgba(10,8,18,.82);
   display:flex; align-items:center; justify-content:center; z-index:50;
-  animation: overlayFadeIn .25s ease both;
 }
 .win-card{
   background: var(--panel-2); border-radius:20px; padding:2rem 1.6rem; text-align:center;
   width: 84%; max-width: 320px;
-  animation: winCardPop .3s cubic-bezier(.2,.9,.3,1.3) both;
 }
-.win-emoji{ font-size:2.4rem; margin:0; animation: trophyBounce 1.2s ease-in-out infinite; }
+.win-emoji{ font-size:2.4rem; margin:0; }
 .win-card h2{ font-family: var(--display); margin:.3rem 0 1.2rem; }
-
-/* ===== Animations ===== */
-@keyframes tokenPop{
-  from{ transform: scale(.3); opacity: 0; }
-  to{ transform: scale(1); opacity: 1; }
-}
-@keyframes tokenPulse{
-  0%,100%{ box-shadow: 0 0 0 3px var(--gold), 0 2px 6px rgba(0,0,0,.4); }
-  50%{ box-shadow: 0 0 0 6px rgba(212,162,76,.35), 0 2px 6px rgba(0,0,0,.4); }
-}
-@keyframes boardFadeIn{
-  from{ opacity: 0; transform: scale(.97); }
-  to{ opacity: 1; transform: scale(1); }
-}
-@keyframes viewFadeIn{
-  from{ opacity: 0; }
-  to{ opacity: 1; }
-}
-@keyframes seatIn{
-  from{ opacity: 0; transform: translateY(4px); }
-  to{ opacity: 1; transform: translateY(0); }
-}
-@keyframes logIn{
-  from{ opacity: 0; transform: translateY(-4px); }
-  to{ opacity: 1; transform: translateY(0); }
-}
-@keyframes overlayFadeIn{
-  from{ opacity: 0; }
-  to{ opacity: 1; }
-}
-@keyframes winCardPop{
-  from{ opacity: 0; transform: scale(.85); }
-  to{ opacity: 1; transform: scale(1); }
-}
-@keyframes trophyBounce{
-  0%,100%{ transform: translateY(0); }
-  50%{ transform: translateY(-6px); }
-  }
-           
+  
