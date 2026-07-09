@@ -1,0 +1,307 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>EvaStack - EvaGames</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link href="https://fonts.googleapis.com/css2?family=Baloo+2:wght@700&family=Inter:wght@400;600&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --ink: #12101c;
+            --panel: #1e1a30;
+            --panel-2: #262040;
+            --paper: #f2e7d5;
+            --gold: #d4a24c;
+            --gold-soft: #e9c98a;
+            --muted: #9a92b8;
+        }
+
+        body {
+            margin: 0;
+            padding: 0;
+            background: radial-gradient(circle at 20% 0%, #221c3a 0%, var(--ink) 55%);
+            font-family: 'Inter', sans-serif;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            min-height: 100vh;
+            color: var(--paper);
+            overflow: hidden;
+        }
+        .game-container {
+            position: relative;
+            text-align: center;
+        }
+        .back-btn {
+            position: absolute;
+            top: -50px;
+            left: 0;
+            color: var(--muted);
+            text-decoration: none;
+            font-size: 14px;
+            display: flex;
+            align-items: center;
+            gap: 5px;
+            transition: color 0.2s;
+        }
+        .back-btn:hover { color: var(--paper); }
+        
+        canvas {
+            background: var(--panel);
+            border: 2px solid rgba(212, 162, 76, 0.2);
+            border-radius: 18px;
+            box-shadow: 0 20px 40px rgba(0,0,0,0.5);
+            cursor: pointer;
+            display: block;
+        }
+        .ui-layer {
+            position: absolute;
+            top: 20px;
+            left: 0;
+            right: 0;
+            pointer-events: none;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+        .score {
+            font-family: 'Baloo 2', sans-serif;
+            font-size: 48px;
+            font-weight: 700;
+            margin: 0;
+            text-shadow: 0 4px 8px rgba(0,0,0,0.6);
+            color: var(--gold);
+        }
+        .instructions {
+            position: absolute;
+            bottom: 30px;
+            left: 0;
+            right: 0;
+            text-align: center;
+            color: var(--muted);
+            font-size: 14px;
+            pointer-events: none;
+        }
+        .game-over-screen {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(18, 16, 28, 0.9);
+            border-radius: 16px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            opacity: 0;
+            pointer-events: none;
+            transition: opacity 0.3s ease;
+        }
+        .game-over-screen.active {
+            opacity: 1;
+            pointer-events: auto;
+        }
+        .game-over-screen h2 {
+            font-family: 'Baloo 2', sans-serif;
+            font-size: 36px;
+            margin: 0 0 10px 0;
+            color: #e6473f;
+        }
+        .restart-btn {
+            background: var(--gold);
+            color: var(--ink);
+            border: none;
+            padding: 12px 24px;
+            font-size: 16px;
+            font-weight: 600;
+            border-radius: 8px;
+            cursor: pointer;
+            font-family: inherit;
+            transition: transform 0.1s, background 0.2s;
+        }
+        .restart-btn:hover { background: var(--gold-soft); transform: scale(1.05); }
+    </style>
+</head>
+<body>
+
+<div class="game-container">
+    <a href="/" class="back-btn">← Back to Shelf</a>
+    
+    <div class="ui-layer">
+        <div class="score" id="scoreDisplay">0</div>
+    </div>
+
+    <canvas id="gameCanvas" width="400" height="550"></canvas>
+    
+    <div class="instructions" id="instructionText">Click or Spacebar to drop the block</div>
+
+    <div class="game-over-screen" id="gameOverScreen">
+        <h2>Tower Tumbled!</h2>
+        <p style="margin: 0 0 20px 0; color: var(--muted);">Final Score: <span id="finalScore" style="color: var(--paper); font-weight: bold;">0</span></p>
+        <button class="restart-btn" onclick="resetGame()">Play Again</button>
+    </div>
+</div>
+
+<script>
+const canvas = document.getElementById('gameCanvas');
+const ctx = canvas.getContext('2d');
+const scoreDisplay = document.getElementById('scoreDisplay');
+const finalScore = document.getElementById('finalScore');
+const gameOverScreen = document.getElementById('gameOverScreen');
+const instructionText = document.getElementById('instructionText');
+
+// Game Parameters
+const BLOCK_HEIGHT = 40;
+const BASE_WIDTH = 200;
+
+// Dynamic States
+let stack = [];
+let currentBlock = {};
+let score = 0;
+let isGameOver = false;
+let cameraY = 0;
+let targetCameraY = 0;
+let colorPhase = 0;
+
+function init() {
+    // Initial solid foundation slab
+    stack = [
+        { x: (canvas.width - BASE_WIDTH) / 2, y: canvas.height - BLOCK_HEIGHT, width: BASE_WIDTH, color: '#f2e7d5' }
+    ];
+    score = 0;
+    isGameOver = false;
+    cameraY = 0;
+    targetCameraY = 0;
+    colorPhase = 0;
+    scoreDisplay.innerText = score;
+    gameOverScreen.classList.remove('active');
+    instructionText.style.opacity = '1';
+    
+    spawnBlock();
+}
+
+function spawnBlock() {
+    const topBlock = stack[stack.length - 1];
+    colorPhase = (colorPhase + 25) % 360;
+    
+    currentBlock = {
+        x: 0,
+        y: topBlock.y - BLOCK_HEIGHT,
+        width: topBlock.width,
+        speed: 3.5 + (score * 0.25), // Smooth speed curve scaling up
+        direction: 1,
+        // Shifts blocks cleanly through the custom theme's gold/warm scale variations
+        color: `hsl(${35 + (colorPhase * 0.1)}, 65%, ${50 + (score % 2 * 8)}%)`
+    };
+}
+
+function dropBlock() {
+    if (isGameOver) return;
+    instructionText.style.opacity = '0';
+
+    const topBlock = stack[stack.length - 1];
+    
+    const leftBound = topBlock.x;
+    const rightBound = topBlock.x + topBlock.width;
+    
+    // Complete miss guard
+    if (currentBlock.x + currentBlock.width < leftBound || currentBlock.x > rightBound) {
+        endGame();
+        return;
+    }
+
+    // Chop slice mechanics
+    let newX = Math.max(currentBlock.x, leftBound);
+    let newWidth = Math.min(currentBlock.x + currentBlock.width, rightBound) - newX;
+
+    // Perfect structural snap allowance
+    if (Math.abs(currentBlock.x - topBlock.x) < 5) {
+        newX = topBlock.x;
+        newWidth = topBlock.width;
+    }
+
+    stack.push({
+        x: newX,
+        y: currentBlock.y,
+        width: newWidth,
+        color: currentBlock.color
+    });
+
+    score++;
+    scoreDisplay.innerText = score;
+
+    // Save records automatically to global localStorage shell logic
+    if (window.updateArcadeHighScore) {
+        window.updateArcadeHighScore('stack', score);
+    }
+
+    if (stack.length * BLOCK_HEIGHT > canvas.height / 1.8) {
+        targetCameraY += BLOCK_HEIGHT;
+    }
+
+    spawnBlock();
+}
+
+function endGame() {
+    isGameOver = true;
+    finalScore.innerText = score;
+    gameOverScreen.classList.add('active');
+}
+
+function resetGame() {
+    init();
+}
+
+// Global UI Hook Event listeners
+window.addEventListener('keydown', (e) => {
+    if (e.code === 'Space') {
+        e.preventDefault();
+        dropBlock();
+    }
+});
+canvas.addEventListener('click', dropBlock);
+
+// Render Engine loop
+function animate() {
+    cameraY += (targetCameraY - cameraY) * 0.1;
+
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+    ctx.save();
+    ctx.translate(0, cameraY);
+
+    // Draw Stable Core Blocks
+    stack.forEach((block, index) => {
+        ctx.fillStyle = block.color;
+        ctx.fillRect(block.x, block.y, block.width, BLOCK_HEIGHT);
+        
+        ctx.strokeStyle = '#1e1a30';
+        ctx.lineWidth = 1.5;
+        ctx.strokeRect(block.x, block.y, block.width, BLOCK_HEIGHT);
+    });
+
+    // Draw Realtime Slider Block
+    if (!isGameOver) {
+        currentBlock.x += currentBlock.speed * currentBlock.direction;
+        
+        if (currentBlock.x + currentBlock.width > canvas.width || currentBlock.x < 0) {
+            currentBlock.direction *= -1;
+        }
+
+        ctx.fillStyle = currentBlock.color;
+        ctx.fillRect(currentBlock.x, currentBlock.y, currentBlock.width, BLOCK_HEIGHT);
+    }
+
+    ctx.restore();
+    requestAnimationFrame(animate);
+}
+
+init();
+animate();
+</script>
+</body>
+  </html>
+  
