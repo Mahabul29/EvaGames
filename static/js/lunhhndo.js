@@ -47,6 +47,65 @@
     homeKeySet[col] = new Set(HOME_COLS[col].map(([r, c]) => key(r, c)));
   });
 
+  /* ================= SOUND (synthesized, no audio files needed) ================= */
+
+  let audioCtx = null;
+  let soundOn = true;
+
+  function ensureAudioCtx() {
+    if (!audioCtx) {
+      const Ctx = window.AudioContext || window.webkitAudioContext;
+      if (Ctx) audioCtx = new Ctx();
+    }
+    if (audioCtx && audioCtx.state === "suspended") audioCtx.resume();
+    return audioCtx;
+  }
+
+  function playTone(freq, duration, type, startGain, delay) {
+    if (!soundOn) return;
+    const ctx = ensureAudioCtx();
+    if (!ctx) return;
+    const t0 = ctx.currentTime + (delay || 0);
+    const osc = ctx.createOscillator();
+    const gain = ctx.createGain();
+    osc.type = type || "sine";
+    osc.frequency.setValueAtTime(freq, t0);
+    gain.gain.setValueAtTime(startGain || 0.15, t0);
+    gain.gain.exponentialRampToValueAtTime(0.001, t0 + duration);
+    osc.connect(gain);
+    gain.connect(ctx.destination);
+    osc.start(t0);
+    osc.stop(t0 + duration);
+  }
+
+  const sfx = {
+    rollTick() { playTone(280 + Math.random() * 120, 0.05, "square", 0.05); },
+    move() { playTone(520, 0.09, "triangle", 0.12); },
+    capture() {
+      playTone(180, 0.18, "sawtooth", 0.14);
+      playTone(90, 0.22, "sawtooth", 0.1, 0.05);
+    },
+    finish() { playTone(660, 0.15, "triangle", 0.14); },
+    win() {
+      [523.25, 659.25, 783.99, 1046.5].forEach((f, i) => playTone(f, 0.35, "triangle", 0.13, i * 0.13));
+    },
+    click() { playTone(400, 0.05, "square", 0.06); },
+  };
+
+  function setSoundOn(on) {
+    soundOn = on;
+    const btn = document.getElementById("mute-btn");
+    if (btn) btn.textContent = soundOn ? "🔊" : "🔇";
+  }
+
+  const muteBtn = document.getElementById("mute-btn");
+  if (muteBtn) {
+    muteBtn.addEventListener("click", () => {
+      ensureAudioCtx();
+      setSoundOn(!soundOn);
+    });
+  }
+
   /* ================= STATE ================= */
 
   let state = null; // set on start
@@ -255,6 +314,7 @@
     let ticks = 0;
     const spin = setInterval(() => {
       setDiceFace(diceEl, 1 + Math.floor(Math.random() * 6));
+      sfx.rollTick();
       ticks++;
       if (ticks > 6) {
         clearInterval(spin);
@@ -297,6 +357,7 @@
               const otherIdx = (START_INDEX[op.color] + ot.step) % 52;
               if (otherIdx === commonIdx) {
                 ot.step = -1;
+                sfx.capture();
               }
             }
           });
@@ -306,6 +367,9 @@
 
     if (token.step === 56) {
       player.finishedCount++;
+      sfx.finish();
+    } else {
+      sfx.move();
     }
   }
 
@@ -462,6 +526,7 @@
     winText.textContent = `${winner.name} wins!`;
     winOverlay.classList.remove("hidden");
     updateDiceUI();
+    sfx.win();
   }
 
   document.getElementById("win-restart").addEventListener("click", () => {
@@ -484,6 +549,7 @@
       btn.addEventListener("click", () => {
         row.querySelectorAll(".choice-btn").forEach(b => b.classList.remove("active"));
         btn.classList.add("active");
+        sfx.click();
         onPick(btn.dataset[attr]);
       });
     });
@@ -526,6 +592,7 @@
   }
 
   document.getElementById("start-btn").addEventListener("click", () => {
+    sfx.click();
     try {
       const colors = colorsForCount(cfg.count);
       const kinds = colors.map((_, i) => (cfg.players === "local" || i === 0) ? "human" : "ai");
@@ -575,10 +642,4 @@
       const el = document.createElement("div");
       el.className = "entry-arrow arrow-" + color;
       el.style.gridRowStart = r + 1;
-      el.style.gridColumnStart = c + 1;
-      el.textContent = arrows[color];
-      boardEl.appendChild(el);
-    });
-  }
-})();
-      
+      el.style.gridColum
