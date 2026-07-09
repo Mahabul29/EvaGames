@@ -1,0 +1,55 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>EvaDrive</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Baloo+2:wght@500;700;800&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+<link rel="stylesheet" href="{{ url_for('static', filename='css/car.css') }}">
+</head>
+<body class="car-body">
+
+<header class="car-header">
+  <button class="back-link" id="back-link" type="button">← EvaGames</button>
+</header>
+
+<section class="car-view">
+
+  <div class="hud-row">
+    <div class="hud-chip">
+      <span class="hud-label">Score</span>
+      <span class="hud-value" id="score-value">0</span>
+    </div>
+    <button class="hud-mute" id="mute-btn" title="Mute/unmute sound">🔊</button>
+    <div class="hud-chip">
+      <span class="hud-label">Best</span>
+      <span class="hud-value" id="best-value">0</span>
+    </div>
+  </div>
+
+  <div class="canvas-wrap" id="canvas-wrap">
+    <canvas id="game-canvas"></canvas>
+
+    <div id="start-overlay" class="game-overlay">
+      <p class="overlay-emoji">🚗</p>
+      <h1 class="overlay-title">EvaDrive</h1>
+      <p class="overlay-sub">Tap anywhere to jump — clear the rocks<br>and the gaps in the bridges. Survive as long as you can.</p>
+      <button class="start-btn" id="start-btn">Tap to start</button>
+    </div>
+
+    <div id="over-overlay" class="game-overlay hidden">
+      <p class="overlay-emoji">💥</p>
+      <h1 class="overlay-title">Crashed!</h1>
+      <p class="overlay-sub" id="over-score">Score: 0</p>
+      <button class="start-btn" id="retry-btn">Try again</button>
+    </div>
+  </div>
+
+</section>
+
+<script src="{{ url_for('static', filename='js/car.js') }}"></script>
+</body>
+        </html>
+                                                              
