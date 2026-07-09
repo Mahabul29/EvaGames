@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>EvaGames</title>
+    <title>EvaGames Arcade</title>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link href="https://fonts.googleapis.com/css2?family=Baloo+2:wght@500;700;800&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
@@ -12,9 +12,11 @@
 
 <section class="home-hero">
   <div class="die-stack">
+    <!-- Die A (renders 5 dots based on grid setup) -->
     <div class="die die-a">
       <span></span><span></span><span></span><span></span><span></span><span></span>
     </div>
+    <!-- Die B (renders 3 dots based on grid setup) -->
     <div class="die die-b">
       <span></span><span></span><span></span>
     </div>
@@ -54,6 +56,7 @@
     <p>© 2026 EvaGames • Built for slow evenings</p>
 </footer>
 
+<!-- Essential script for AJAX seamless loading and high scores -->
 <script src="{{ url_for('static', filename='js/main.js') }}"></script>
 </body>
 </html>
