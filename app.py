@@ -2,7 +2,7 @@ from flask import Flask, render_template, abort
 
 app = Flask(__name__)
 
-# Centralized registry of games shown on the homepage shelf.
+# Centralized registry of all games shown on the homepage shelf.
 GAMES = [
     {
         "slug": "ludo",
@@ -40,20 +40,25 @@ GAMES = [
         "status": "playable",
     },
     {
-        "slug": "coming-soon-1",
-        "name": "???",
-        "tagline": "Another game is being built.",
-        "icon": "🕹️",
-        "status": "soon",
-    },
+        "slug": "knife",
+        "name": "EvaKnife",
+        "tagline": "Throw knives, shatter target logs, timing is everything.",
+        "icon": "🗡️",
+        "status": "playable",
+    }
 ]
 
 @app.route("/")
 def home():
+    """Renders the main arcade shelf landing page."""
     return render_template("home.html", games=GAMES)
 
 @app.route("/games/<slug>")
 def play_game(slug):
+    """
+    Dynamic routing handler. Maps incoming game requests safely
+    to their respective templates using the game's unique slug.
+    """
     game = next((g for g in GAMES if g["slug"] == slug), None)
     
     if not game or game["status"] != "playable":
