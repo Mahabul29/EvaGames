@@ -1,0 +1,58 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>EvaGames</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Baloo+2:wght@500;700;800&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+</head>
+<body class="home-body">
+
+  <header class="home-hero">
+    <div class="die-stack" aria-hidden="true">
+      <div class="die die-a">
+        <span></span><span></span><span></span><span></span><span></span><span></span>
+      </div>
+      <div class="die die-b">
+        <span></span><span></span><span></span>
+      </div>
+    </div>
+    <p class="eyebrow">EvaGames Arcade</p>
+    <h1>Pick a cartridge.<br>Press start.</h1>
+    <p class="hero-sub">A little shelf of games built for slow evenings and long bus rides. Offline-first, no accounts, no fuss.</p>
+  </header>
+
+  <main class="shelf">
+    {% for game in games %}
+      {% if game.status == "playable" %}
+        <a class="cartridge" href="{{ game.route }}">
+          <div class="cartridge-top">
+            <span class="cartridge-icon">{{ game.icon }}</span>
+            <span class="cartridge-tag">Ready to play</span>
+          </div>
+          <h2>{{ game.name }}</h2>
+          <p>{{ game.tagline }}</p>
+          <span class="cartridge-cta">Insert cartridge →</span>
+        </a>
+      {% else %}
+        <div class="cartridge cartridge-locked">
+          <div class="cartridge-top">
+            <span class="cartridge-icon">{{ game.icon }}</span>
+            <span class="cartridge-tag">In the works</span>
+          </div>
+          <h2>{{ game.name }}</h2>
+          <p>{{ game.tagline }}</p>
+          <span class="cartridge-cta">Coming soon</span>
+        </div>
+      {% endif %}
+    {% endfor %}
+  </main>
+
+  <footer class="home-footer">
+    <p>Built by Mahabul · EvaGames</p>
+  </footer>
+
+</body>
+</html>
