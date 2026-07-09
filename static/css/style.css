@@ -120,8 +120,15 @@ button{ font-family: inherit; cursor: pointer; }
 .cartridge-cta{ font-size: .85rem; font-weight:600; color: var(--gold); }
 .cartridge-locked{ opacity: .55; }
 .cartridge-locked .cartridge-cta{ color: var(--muted); }
+.cartridge-locked::after{
+  content: "";
+  display: block;
+  margin-top: .9rem;
+  border-top: 2px dashed rgba(212,162,76,.25);
+}
 
 .home-footer{
   text-align:center; color: var(--muted); font-size: .78rem;
   padding: 1rem 0 2rem;
-             }
+}
+  
