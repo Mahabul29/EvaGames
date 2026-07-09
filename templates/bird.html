@@ -1,0 +1,359 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>EvaBird - EvaGames</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link href="https://fonts.googleapis.com/css2?family=Baloo+2:wght@700&family=Inter:wght@400;600&display=swap" rel="stylesheet">
+    <style>
+        body {
+            margin: 0;
+            padding: 0;
+            background: #0b0b0d;
+            font-family: 'Inter', sans-serif;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            min-height: 100vh;
+            color: #fff;
+            overflow: hidden;
+        }
+        .game-container {
+            position: relative;
+            text-align: center;
+        }
+        .back-btn {
+            position: absolute;
+            top: -50px;
+            left: 0;
+            color: #71717a;
+            text-decoration: none;
+            font-size: 14px;
+            display: flex;
+            align-items: center;
+            gap: 5px;
+            transition: color 0.2s;
+        }
+        .back-btn:hover { color: #fff; }
+        canvas {
+            background: linear-gradient(to bottom, #111827, #030712);
+            border-radius: 16px;
+            box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.7);
+            cursor: pointer;
+            display: block;
+        }
+        .ui-layer {
+            position: absolute;
+            top: 30px;
+            left: 0;
+            right: 0;
+            pointer-events: none;
+        }
+        .score {
+            font-family: 'Baloo 2', sans-serif;
+            font-size: 54px;
+            font-weight: 700;
+            margin: 0;
+            text-shadow: 0 0 12px rgba(168, 85, 247, 0.4);
+            color: #a855f7;
+        }
+        .screen-overlay {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(11, 11, 13, 0.8);
+            border-radius: 16px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            opacity: 0;
+            pointer-events: none;
+            transition: opacity 0.3s ease;
+        }
+        .screen-overlay.active {
+            opacity: 1;
+            pointer-events: auto;
+        }
+        .screen-overlay h2 {
+            font-family: 'Baloo 2', sans-serif;
+            font-size: 38px;
+            margin: 0 0 10px 0;
+            color: #f43f5e;
+        }
+        .action-btn {
+            background: #a855f7;
+            color: #ffffff;
+            border: none;
+            padding: 14px 28px;
+            font-size: 16px;
+            font-weight: 600;
+            border-radius: 8px;
+            cursor: pointer;
+            font-family: inherit;
+            box-shadow: 0 4px 14px rgba(168, 85, 247, 0.4);
+            transition: transform 0.1s, background 0.2s;
+        }
+        .action-btn:hover { background: #c084fc; transform: scale(1.03); }
+    </style>
+</head>
+<body>
+
+<div class="game-container">
+    <a href="/" class="back-btn">← Back to Shelf</a>
+    
+    <div class="ui-layer">
+        <div class="score" id="scoreDisplay">0</div>
+    </div>
+
+    <canvas id="gameCanvas" width="450" height="600"></canvas>
+
+    <div class="screen-overlay active" id="startScreen">
+        <h2 style="color: #a855f7;">EvaBird</h2>
+        <p style="margin: 0 0 20px 0; color: #94a3b8;">Click or press Spacebar to jump and glide.</p>
+        <button class="action-btn" onclick="startGame()">Launch Engine</button>
+    </div>
+
+    <div class="screen-overlay" id="gameOverScreen">
+        <h2>System Crash</h2>
+        <p style="margin: 0 0 20px 0; color: #94a3b8;">Score: <span id="finalScore" style="color: #fff; font-weight: bold;">0</span></p>
+        <button class="action-btn" onclick="resetGame()">Reboot Simulation</button>
+    </div>
+</div>
+
+<script>
+const canvas = document.getElementById('gameCanvas');
+const ctx = canvas.getContext('2d');
+const scoreDisplay = document.getElementById('scoreDisplay');
+const finalScore = document.getElementById('finalScore');
+const startScreen = document.getElementById('startScreen');
+const gameOverScreen = document.getElementById('gameOverScreen');
+
+// Physics Configuration
+const GRAVITY = 0.28;
+const JUMP_STRENGTH = -6.5;
+const PIPE_SPEED = 2.8;
+const PIPE_SPAWN_RATE = 100;
+const GAP_SIZE = 150;
+
+// Entities & Particles
+let bird = {};
+let pipes = [];
+let particles = [];
+let stars = [];
+let frameCount = 0;
+let score = 0;
+let gameState = 'START'; // START, PLAYING, GAMEOVER
+
+function init() {
+    bird = {
+        x: 100,
+        y: 250,
+        radius: 14,
+        velocity: 0,
+        rotation: 0
+    };
+    pipes = [];
+    particles = [];
+    score = 0;
+    frameCount = 0;
+    scoreDisplay.innerText = score;
+    
+    // Generate twinkling cyberpunk background elements once
+    stars = [];
+    for(let i=0; i<40; i++) {
+        stars.push({
+            x: Math.random() * canvas.width,
+            y: Math.random() * canvas.height,
+            size: Math.random() * 2,
+            alpha: Math.random()
+        });
+    }
+}
+
+function startGame() {
+    gameState = 'PLAYING';
+    startScreen.classList.remove('active');
+    init();
+}
+
+function jump() {
+    if (gameState === 'PLAYING') {
+        bird.velocity = JUMP_STRENGTH;
+        // Spawn jump engine trail particles
+        for(let i=0; i<6; i++) {
+            particles.push({
+                x: bird.x - 5,
+                y: bird.y,
+                vx: -Math.random() * 2 - 1,
+                vy: (Math.random() - 0.5) * 3,
+                size: Math.random() * 4 + 2,
+                color: 'rgba(192, 132, 252, 0.8)',
+                life: 1
+            });
+        }
+    }
+}
+
+function spawnPipe() {
+    const minHeight = 50;
+    const maxHeight = canvas.height - GAP_SIZE - minHeight;
+    const topHeight = Math.floor(Math.random() * (maxHeight - minHeight + 1) + minHeight);
+    
+    pipes.push({
+        x: canvas.width,
+        topHeight: topHeight,
+        bottomY: topHeight + GAP_SIZE,
+        width: 65,
+        passed: false
+    });
+}
+
+function endGame() {
+    gameState = 'GAMEOVER';
+    finalScore.innerText = score;
+    gameOverScreen.classList.add('active');
+}
+
+function resetGame() {
+    gameOverScreen.classList.remove('active');
+    startGame();
+}
+
+// Controller Hooks
+window.addEventListener('keydown', (e) => {
+    if (e.code === 'Space') {
+        e.preventDefault();
+        jump();
+    }
+});
+canvas.addEventListener('click', jump);
+
+// Engine Cycle
+function animate() {
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+    // 1. Draw Ambient Background
+    stars.forEach(star => {
+        ctx.fillStyle = `rgba(255, 255, 255, ${star.alpha})`;
+        ctx.fillRect(star.x, star.y, star.size, star.size);
+        if(gameState === 'PLAYING') {
+            star.x -= 0.2; // Soft parallax shift
+            if(star.x < 0) star.x = canvas.width;
+        }
+    });
+
+    if (gameState === 'PLAYING') {
+        frameCount++;
+        if (frameCount % PIPE_SPAWN_RATE === 0) spawnPipe();
+
+        // 2. Physics & Motion Logic
+        bird.velocity += GRAVITY;
+        bird.y += bird.velocity;
+        
+        // Dynamic orientation based on vector trajectory
+        bird.rotation = Math.min(Math.PI / 4, Math.max(-Math.PI / 7, bird.velocity * 0.07));
+
+        // Ceilings/Floors boundaries
+        if (bird.y + bird.radius > canvas.height || bird.y - bird.radius < 0) {
+            endGame();
+        }
+
+        // Pipe Management
+        for (let i = pipes.length - 1; i >= 0; i--) {
+            let p = pipes[i];
+            p.x -= PIPE_SPEED;
+
+            // Collision Detection Matrices
+            if (bird.x + bird.radius > p.x && bird.x - bird.radius < p.x + p.width) {
+                if (bird.y - bird.radius < p.topHeight || bird.y + bird.radius > p.bottomY) {
+                    endGame();
+                }
+            }
+
+            // Score Tracking
+            if (!p.passed && p.x + p.width < bird.x) {
+                p.passed = true;
+                score++;
+                scoreDisplay.innerText = score;
+            }
+
+            // Clean up off-screen assets
+            if (p.x + p.width < 0) pipes.splice(i, 1);
+        }
+    }
+
+    // 3. Render Pipeline & FX Layers
+    // Draw Pipes (Cyberpunk Hex / Neon aesthetic styles)
+    pipes.forEach(p => {
+        ctx.shadowBlur = 8;
+        ctx.shadowColor = '#f43f5e';
+        ctx.fillStyle = '#1e1b4b';
+        ctx.strokeStyle = '#f43f5e';
+        ctx.lineWidth = 3;
+
+        // Upper Column
+        ctx.fillRect(p.x, 0, p.width, p.topHeight);
+        ctx.strokeRect(p.x, -5, p.width, p.topHeight + 5);
+
+        // Lower Column
+        ctx.fillRect(p.x, p.bottomY, p.width, canvas.height - p.bottomY);
+        ctx.strokeRect(p.x, p.bottomY, p.width, canvas.height - p.bottomY + 5);
+        
+        ctx.shadowBlur = 0; // Clear shadow buffer for next items
+    });
+
+    // Handle Particle Lifecycles
+    for (let i = particles.length - 1; i >= 0; i--) {
+        let pt = particles[i];
+        pt.x += pt.vx;
+        pt.y += pt.vy;
+        pt.life -= 0.03;
+        ctx.fillStyle = pt.color;
+        ctx.globalAlpha = pt.life;
+        ctx.beginPath();
+        ctx.arc(pt.x, pt.y, pt.size, 0, Math.PI * 2);
+        ctx.fill();
+        if(pt.life <= 0) particles.splice(i, 1);
+    }
+    ctx.globalAlpha = 1.0;
+
+    // Draw Character (EvaBird vector layout)
+    ctx.save();
+    ctx.translate(bird.x, bird.y);
+    ctx.rotate(bird.rotation);
+    
+    // Core engine glow body
+    ctx.shadowBlur = 10;
+    ctx.shadowColor = '#38bdf8';
+    ctx.fillStyle = '#38bdf8';
+    ctx.beginPath();
+    ctx.arc(0, 0, bird.radius, 0, Math.PI * 2);
+    ctx.fill();
+
+    // Eye visor details
+    ctx.fillStyle = '#0f172a';
+    ctx.fillRect(4, -6, 6, 4);
+
+    // Flight wing overlay
+    ctx.fillStyle = '#0284c7';
+    ctx.beginPath();
+    ctx.ellipse(-4, 2, 8, 5, Math.PI / 6, 0, Math.PI * 2);
+    ctx.fill();
+
+    ctx.restore();
+    ctx.shadowBlur = 0;
+
+    requestAnimationFrame(animate);
+}
+
+init();
+animate();
+</script>
+</body>
+  </html>
+  
