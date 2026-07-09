@@ -1,12 +1,12 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>EvaGames</title>
-<link rel="preconnect" href="https://fonts.googleapis.com">
-<link href="https://fonts.googleapis.com/css2?family=Baloo+2:wght@500;700;800&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>EvaGames</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link href="https://fonts.googleapis.com/css2?family=Baloo+2:wght=500;700;800&family=Inter:wght=400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
 </head>
 <body>
 
@@ -27,7 +27,7 @@
 <div class="shelf">
   {% for game in games %}
     {% if game.status == "playable" %}
-    <a class="cartridge" href="{{ game.route }}">
+    <a class="cartridge" href="{{ url_for('play_game', slug=game.slug) }}">
       <div class="cartridge-top">
         <span class="cartridge-icon">{{ game.icon }}</span>
         <span class="cartridge-tag">Ready to play</span>
@@ -42,10 +42,14 @@
         <span class="cartridge-icon">{{ game.icon }}</span>
         <span class="cartridge-tag">In the works</span>
       </div>
+      <h2>{{ game.name }}</h2>
+      <p>{{ game.tagline }}</p>
+      <span class="cartridge-cta">Under construction...</span>
     </div>
     {% endif %}
   {% endfor %}
 </div>
 
 </body>
-</html>
+  </html>
+  
