@@ -5,7 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>EvaGames</title>
     <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link href="https://fonts.googleapis.com/css2?family=Baloo+2:wght=500;700;800&family=Inter:wght=400;500;600;700&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Baloo+2:wght@500;700;800&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
 </head>
 <body>
@@ -16,7 +16,7 @@
       <span></span><span></span><span></span><span></span><span></span><span></span>
     </div>
     <div class="die die-b">
-      <span></span><span></span><span></span><span></span><span></span><span></span>
+      <span></span><span></span><span></span>
     </div>
   </div>
   <p class="eyebrow">EvaGames Arcade</p>
@@ -44,12 +44,16 @@
       </div>
       <h2>{{ game.name }}</h2>
       <p>{{ game.tagline }}</p>
-      <span class="cartridge-cta">Under construction...</span>
+      <span class="cartridge-cta">Under construction</span>
     </div>
     {% endif %}
   {% endfor %}
 </div>
 
+<footer class="home-footer">
+    <p>© 2026 EvaGames • Built for slow evenings</p>
+</footer>
+
+<script src="{{ url_for('static', filename='js/main.js') }}"></script>
 </body>
-  </html>
-  
+</html>
