@@ -51,10 +51,11 @@
 
   let state = null; // set on start
 
-  function buildInitialState(colors, kinds) {
+  function buildInitialState(colors, kinds, names) {
     const players = colors.map((color, i) => ({
       color,
       kind: kinds[i], // 'human' | 'ai'
+      name: names[i],
       tokens: [0, 1, 2, 3].map(slot => ({ step: -1, slotIndex: slot })),
       finishedCount: 0,
     }));
@@ -182,11 +183,11 @@
     state.players.forEach((p, i) => {
       const chip = document.createElement("div");
       chip.className = "hud-chip" + (i === state.turn ? " current" : "") + (p.finishedCount === 4 ? " done" : "");
-      chip.innerHTML = `<span class="dot" style="background:var(--${p.color})"></span>${NAMES[p.color]}${p.kind === "ai" ? " 🤖" : ""}`;
+      chip.innerHTML = `<span class="dot" style="background:var(--${p.color})"></span>${p.name}`;
       hudPlayersEl.appendChild(chip);
     });
     const cur = state.players[state.turn];
-    turnBannerEl.textContent = state.gameOver ? "Game over" : `${NAMES[cur.color]}${cur.kind === "ai" ? " (computer)" : ""}'s turn`;
+    turnBannerEl.textContent = state.gameOver ? "Game over" : `${cur.name}'s turn`;
   }
 
   function log(msg) {
@@ -229,7 +230,7 @@
               if (otherIdx === commonIdx) {
                 ot.step = -1;
                 captured = true;
-                log(`${NAMES[player.color]} sent a ${NAMES[op.color]} token home!`);
+                log(`${player.name} sent a ${op.name} token home!`);
               }
             }
           });
@@ -239,11 +240,11 @@
 
     if (token.step === 56) {
       player.finishedCount++;
-      log(`${NAMES[player.color]} got a token all the way home! (${player.finishedCount}/4)`);
+      log(`${player.name} got a token all the way home! (${player.finishedCount}/4)`);
     } else if (wasYard) {
-      log(`${NAMES[player.color]} brought a token out.`);
+      log(`${player.name} brought a token out.`);
     } else {
-      log(`${NAMES[player.color]} moved a token ${diceValue}.`);
+      log(`${player.name} moved a token ${diceValue}.`);
     }
 
     return captured;
@@ -275,15 +276,29 @@
 
   /* ================= DICE / TURN FLOW ================= */
 
+  const PIP_LAYOUT = {
+    1: ["p22"],
+    2: ["p11", "p33"],
+    3: ["p11", "p22", "p33"],
+    4: ["p11", "p13", "p31", "p33"],
+    5: ["p11", "p13", "p22", "p31", "p33"],
+    6: ["p11", "p13", "p21", "p23", "p31", "p33"],
+  };
+
+  function setDiceFace(value) {
+    if (!value) { diceEl.textContent = "?"; return; }
+    diceEl.innerHTML = `<div class="dice-face">${PIP_LAYOUT[value].map(p => `<span class="pip ${p}"></span>`).join("")}</div>`;
+  }
+
   function updateDiceUI() {
     const cur = state.players[state.turn];
     const isHumanTurn = cur.kind === "human" && !state.gameOver;
     diceEl.disabled = !(isHumanTurn && state.canRoll);
-    diceEl.textContent = state.dice ?? "?";
+    setDiceFace(state.dice);
     diceHintEl.textContent = state.gameOver
       ? "Thanks for playing!"
       : !isHumanTurn
-        ? "Computer is thinking…"
+        ? `${cur.name} is thinking…`
         : state.canRoll
           ? "Tap the die to roll"
           : state.movableTokens.length
@@ -295,13 +310,13 @@
     diceEl.classList.add("rolling");
     let ticks = 0;
     const spin = setInterval(() => {
-      diceEl.textContent = String(1 + Math.floor(Math.random() * 6));
+      setDiceFace(1 + Math.floor(Math.random() * 6));
       ticks++;
       if (ticks > 6) {
         clearInterval(spin);
         diceEl.classList.remove("rolling");
         const value = 1 + Math.floor(Math.random() * 6);
-        diceEl.textContent = String(value);
+        setDiceFace(value);
         callback(value);
       }
     }, 70);
@@ -322,12 +337,12 @@
   function afterRoll(value) {
     const cur = state.players[state.turn];
     state.dice = value;
-    log(`${NAMES[cur.color]} rolled a ${value}.`);
+    log(`${cur.name} rolled a ${value}.`);
 
     if (value === 6) {
       state.consecutiveSixes++;
       if (state.consecutiveSixes === 3) {
-        log(`Three 6's in a row — ${NAMES[cur.color]} forfeits the turn.`);
+        log(`Three 6's in a row — ${cur.name} forfeits the turn.`);
         setTimeout(() => nextTurn(false), 700);
         return;
       }
@@ -337,7 +352,7 @@
     state.movableTokens = moves;
 
     if (moves.length === 0) {
-      log(`No moves available for ${NAMES[cur.color]}.`);
+      log(`No moves available for ${cur.name}.`);
       updateDiceUI();
       setTimeout(() => nextTurn(value === 6), 700);
       return;
@@ -432,7 +447,7 @@
   const winText = document.getElementById("win-text");
 
   function showWin(winner) {
-    winText.textContent = `${NAMES[winner.color]} wins!`;
+    winText.textContent = `${winner.name} wins!`;
     winOverlay.classList.remove("hidden");
     renderHud();
   }
@@ -489,10 +504,32 @@
   }
   renderSeatList();
 
+  function namesFor(colors, kinds) {
+    let computerNum = 2;
+    return kinds.map((kind, i) => {
+      if (cfg.players === "local") return "Player " + (i + 1);
+      if (kind === "human") return "You";
+      return "Computer " + (computerNum++);
+    });
+  }
+
   document.getElementById("start-btn").addEventListener("click", () => {
-    const colors = colorsForCount(cfg.count);
-    const kinds = colors.map((_, i) => (cfg.players === "local" || i === 0) ? "human" : "ai");
-    startGame(colors, kinds);
+    try {
+      const colors = colorsForCount(cfg.count);
+      const kinds = colors.map((_, i) => (cfg.players === "local" || i === 0) ? "human" : "ai");
+      const names = namesFor(colors, kinds);
+      startGame(colors, kinds, names);
+    } catch (err) {
+      alert("Couldn't start the game: " + err.message);
+      console.error(err);
+    }
+  });
+
+  window.addEventListener("error", e => {
+    // Surfaces script errors on mobile where the console isn't reachable.
+    if (!setupView.classList.contains("hidden") || !gameView.classList.contains("hidden")) {
+      console.error(e.error || e.message);
+    }
   });
 
   document.getElementById("quit-btn").addEventListener("click", goToSetup);
@@ -502,12 +539,13 @@
     setupView.classList.remove("hidden");
   }
 
-  function startGame(colors, kinds) {
-    state = buildInitialState(colors, kinds);
+  function startGame(colors, kinds, names) {
+    state = buildInitialState(colors, kinds, names);
     setupView.classList.add("hidden");
     gameView.classList.remove("hidden");
     logListEl.innerHTML = "";
     buildBoardDOM();
+    renderYardLabels();
     renderHud();
     renderTokens();
     updateDiceUI();
@@ -515,5 +553,31 @@
     maybeRunAiTurn();
   }
 
+  function renderYardLabels() {
+    boardEl.querySelectorAll(".yard-label, .entry-arrow").forEach(el => el.remove());
+    state.players.forEach(p => {
+      const y = YARD_RANGE[p.color];
+      const label = document.createElement("div");
+      label.className = "yard-label";
+      label.style.gridRow = `${y.r0 + 1} / ${y.r1 + 2}`;
+      label.style.gridColumn = `${y.c0 + 1} / ${y.c1 + 2}`;
+      label.textContent = p.name;
+      boardEl.appendChild(label);
+    });
+
+    const arrows = { red: "→", green: "↓", yellow: "←", blue: "↑" };
+    const arrowCells = { red: [7, 1], green: [1, 7], yellow: [7, 13], blue: [13, 7] };
+    ALL_COLORS.forEach(color => {
+      const [r, c] = arrowCells[color];
+      const el = document.createElement("div");
+      el.className = "entry-arrow arrow-" + color;
+      el.style.gridRowStart = r + 1;
+      el.style.gridColumnStart = c + 1;
+      el.textContent = arrows[color];
+      boardEl.appendChild(el);
+    });
+  }
+
   diceEl.addEventListener("click", handleRoll);
 })();
+      
