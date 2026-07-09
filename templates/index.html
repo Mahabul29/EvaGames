@@ -1,0 +1,55 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>EvaGames</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Baloo+2:wght@500;700;800&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+</head>
+<body>
+
+<section class="home-hero">
+  <p class="eyebrow">Eva</p>
+  <div class="die-stack">
+    <div class="die die-a">
+      <span></span><span></span><span></span><span></span><span></span><span></span>
+    </div>
+    <div class="die die-b">
+      <span></span><span></span><span></span><span></span><span></span><span></span>
+    </div>
+  </div>
+  <h1>EvaGames</h1>
+  <p class="hero-sub">A small shelf of games to play offline or pass the phone around.</p>
+</section>
+
+<div class="shelf">
+
+  <a class="cartridge" href="/ludo">
+    <div class="cartridge-top">
+      <span class="cartridge-icon">🎲</span>
+      <span class="cartridge-tag">Board game</span>
+    </div>
+    <h2>EvaLudo</h2>
+    <p>Classic 4-color Ludo. Play solo against the computer or pass &amp; play with friends.</p>
+    <span class="cartridge-cta">Play now →</span>
+  </a>
+
+  <div class="cartridge cartridge-locked">
+    <div class="cartridge-top">
+      <span class="cartridge-icon">🃏</span>
+      <span class="cartridge-tag">Coming soon</span>
+    </div>
+    <h2>More games</h2>
+    <p>New EvaGames titles land here as they're built.</p>
+    <span class="cartridge-cta">Locked</span>
+  </div>
+
+</div>
+
+<p class="home-footer">EvaGames · more titles coming soon</p>
+
+</body>
+  </html>
+  
