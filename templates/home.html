@@ -25,24 +25,26 @@
 </section>
 
 <div class="shelf">
-
-  <a class="cartridge" href="/ludo">
-    <div class="cartridge-top">
-      <span class="cartridge-icon">🎲</span>
-      <span class="cartridge-tag">Ready to play</span>
+  {% for game in games %}
+    {% if game.status == "playable" %}
+    <a class="cartridge" href="{{ game.route }}">
+      <div class="cartridge-top">
+        <span class="cartridge-icon">{{ game.icon }}</span>
+        <span class="cartridge-tag">Ready to play</span>
+      </div>
+      <h2>{{ game.name }}</h2>
+      <p>{{ game.tagline }}</p>
+      <span class="cartridge-cta">Insert cartridge →</span>
+    </a>
+    {% else %}
+    <div class="cartridge cartridge-locked">
+      <div class="cartridge-top">
+        <span class="cartridge-icon">{{ game.icon }}</span>
+        <span class="cartridge-tag">In the works</span>
+      </div>
     </div>
-    <h2>EvaLudo</h2>
-    <p>Roll, race, capture, repeat.</p>
-    <span class="cartridge-cta">Insert cartridge →</span>
-  </a>
-
-  <div class="cartridge cartridge-locked">
-    <div class="cartridge-top">
-      <span class="cartridge-icon">🕹️</span>
-      <span class="cartridge-tag">In the works</span>
-    </div>
-  </div>
-
+    {% endif %}
+  {% endfor %}
 </div>
 
 </body>
