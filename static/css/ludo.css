@@ -39,10 +39,12 @@
   display:flex; flex-direction:column; gap:.15rem;
   font-size: .95rem;
   font-weight:700;
+  transition: border-color .15s ease, background .15s ease, transform .1s ease;
 }
 .choice-btn span{ font-size:.72rem; font-weight:500; color: var(--muted); }
 .choice-btn.active{ border-color: var(--gold); background: var(--panel-2); box-shadow: 0 0 0 1px var(--gold) inset; }
 .choice-btn:disabled{ opacity:.4; }
+.choice-btn:active:not(:disabled){ transform: scale(.97); }
 .choice-row.four .choice-btn{ text-align:center; align-items:center; font-size:1.1rem; }
 
 .seat-list{ display:grid; gap:.5rem; }
@@ -52,6 +54,7 @@
   border-radius: 12px;
   padding: .55rem .8rem;
   border: 1.5px solid rgba(212,162,76,.15);
+  animation: seatIn .25s ease both;
 }
 .seat-row .seat-left{ display:flex; align-items:center; gap:.6rem; }
 .seat-dot{ width:16px; height:16px; border-radius:50%; }
@@ -70,12 +73,13 @@
   font-weight:700;
   font-size: 1.05rem;
   box-shadow: 0 10px 22px rgba(212,162,76,.25);
+  transition: transform .12s ease, box-shadow .12s ease;
 }
-.start-btn:active{ transform: scale(.98); }
+.start-btn:active{ transform: scale(.98); box-shadow: 0 6px 14px rgba(212,162,76,.25); }
 
 /* ===== Game view ===== */
 .hidden{ display:none !important; }
-.game-view{ max-width: 480px; margin: 0 auto; padding: .8rem .7rem 2rem; }
+.game-view{ max-width: 480px; margin: 0 auto; padding: .8rem .7rem 2rem; animation: viewFadeIn .3s ease both; }
 
 .hud{ display:flex; align-items:center; justify-content:space-between; margin-bottom:.6rem; }
 .hud-players{ display:flex; gap:.4rem; flex-wrap:wrap; }
@@ -86,6 +90,7 @@
   padding: .3rem .6rem .3rem .4rem;
   font-size:.72rem; font-weight:700;
   border: 1.5px solid transparent;
+  transition: border-color .2s ease, box-shadow .2s ease, opacity .2s ease;
 }
 .hud-chip .dot{ width:10px; height:10px; border-radius:50%; }
 .hud-chip.current{ border-color: var(--gold); box-shadow: 0 0 0 2px rgba(212,162,76,.2); }
@@ -93,7 +98,9 @@
 .hud-quit{
   background: var(--panel); border:none; color: var(--paper);
   width: 34px; height:34px; border-radius:50%; font-size:1rem;
+  transition: transform .15s ease;
 }
+.hud-quit:active{ transform: rotate(-45deg); }
 
 .board-wrap{ display:flex; justify-content:center; margin-bottom: .8rem; }
 .board{
@@ -108,6 +115,7 @@
   overflow: hidden;
   position: relative;
   box-shadow: 0 16px 40px rgba(0,0,0,.4);
+  animation: boardFadeIn .4s ease both;
 }
 .cell{ position:relative; border: .5px solid rgba(18,16,28,.06); }
 .cell.yard-red{ background: color-mix(in srgb, var(--red) 22%, var(--paper)); }
@@ -157,21 +165,29 @@
 .arrow-yellow{ color: color-mix(in srgb, var(--yellow) 70%, #7a5b00); }
 .arrow-blue{ color: var(--blue); }
 
+/* ===== Tokens (fixed: relative to own grid cell, not the whole board) ===== */
 .token{
-  position:absolute;
-  width: 66%; height: 66%;
-  top:17%; left:17%;
+  position: relative;
+  width: 66%;
+  height: 66%;
+  align-self: center;
+  justify-self: center;
   border-radius: 50%;
   border: 2.5px solid #fff;
   box-shadow: 0 3px 5px rgba(0,0,0,.45), inset 0 -3px 5px rgba(0,0,0,.25), inset 0 2px 3px rgba(255,255,255,.6);
-  transition: top .25s ease, left .25s ease;
+  transition: transform .2s ease;
   z-index: 5;
+  animation: tokenPop .22s ease both;
 }
 .token.tok-red{ background: radial-gradient(circle at 35% 30%, #ff8d84, var(--red)); }
 .token.tok-green{ background: radial-gradient(circle at 35% 30%, #6fd6a0, var(--green)); }
 .token.tok-yellow{ background: radial-gradient(circle at 35% 30%, #ffe08a, var(--yellow)); }
 .token.tok-blue{ background: radial-gradient(circle at 35% 30%, #8fb8f0, var(--blue)); }
-.token.movable{ box-shadow: 0 0 0 3px var(--gold), 0 2px 6px rgba(0,0,0,.4); cursor:pointer; }
+.token.movable{
+  box-shadow: 0 0 0 3px var(--gold), 0 2px 6px rgba(0,0,0,.4);
+  cursor:pointer;
+  animation: tokenPop .22s ease both, tokenPulse 1.1s ease-in-out infinite;
+}
 .token .count{
   position:absolute; inset:0; display:flex; align-items:center; justify-content:center;
   color:#fff; font-size: .55rem; font-weight:800; text-shadow: 0 1px 2px rgba(0,0,0,.5);
@@ -181,6 +197,7 @@
 .turn-banner{
   font-family: var(--display); font-weight:700; font-size:1rem;
   background: var(--panel); padding:.4rem 1rem; border-radius:999px;
+  transition: transform .15s ease;
 }
 .dice-row{ display:flex; flex-direction:column; align-items:center; gap:.3rem; }
 .dice{
@@ -189,7 +206,9 @@
   font-size:1.6rem; font-weight:800; border: none;
   box-shadow: 0 10px 20px rgba(0,0,0,.35);
   padding: 9px;
+  transition: transform .1s ease;
 }
+.dice:active:not(:disabled){ transform: scale(.92); }
 .dice-face{
   width:100%; height:100%;
   display:grid;
@@ -213,16 +232,56 @@
 .log-panel{ background: var(--panel); border-radius:14px; padding:.8rem .9rem; }
 .log-label{ margin:0 0 .4rem; font-size:.75rem; color: var(--gold-soft); font-weight:700; }
 .log-list{ max-height: 110px; overflow-y:auto; display:flex; flex-direction:column-reverse; gap:.25rem; }
-.log-list p{ margin:0; font-size:.78rem; color: var(--muted); }
+.log-list p{ margin:0; font-size:.78rem; color: var(--muted); animation: logIn .18s ease both; }
 
 .win-overlay{
   position:fixed; inset:0; background: rgba(10,8,18,.82);
   display:flex; align-items:center; justify-content:center; z-index:50;
+  animation: overlayFadeIn .25s ease both;
 }
 .win-card{
   background: var(--panel-2); border-radius:20px; padding:2rem 1.6rem; text-align:center;
   width: 84%; max-width: 320px;
+  animation: winCardPop .3s cubic-bezier(.2,.9,.3,1.3) both;
 }
-.win-emoji{ font-size:2.4rem; margin:0; }
+.win-emoji{ font-size:2.4rem; margin:0; animation: trophyBounce 1.2s ease-in-out infinite; }
 .win-card h2{ font-family: var(--display); margin:.3rem 0 1.2rem; }
-  
+
+/* ===== Animations ===== */
+@keyframes tokenPop{
+  from{ transform: scale(.3); opacity: 0; }
+  to{ transform: scale(1); opacity: 1; }
+}
+@keyframes tokenPulse{
+  0%,100%{ box-shadow: 0 0 0 3px var(--gold), 0 2px 6px rgba(0,0,0,.4); }
+  50%{ box-shadow: 0 0 0 6px rgba(212,162,76,.35), 0 2px 6px rgba(0,0,0,.4); }
+}
+@keyframes boardFadeIn{
+  from{ opacity: 0; transform: scale(.97); }
+  to{ opacity: 1; transform: scale(1); }
+}
+@keyframes viewFadeIn{
+  from{ opacity: 0; }
+  to{ opacity: 1; }
+}
+@keyframes seatIn{
+  from{ opacity: 0; transform: translateY(4px); }
+  to{ opacity: 1; transform: translateY(0); }
+}
+@keyframes logIn{
+  from{ opacity: 0; transform: translateY(-4px); }
+  to{ opacity: 1; transform: translateY(0); }
+}
+@keyframes overlayFadeIn{
+  from{ opacity: 0; }
+  to{ opacity: 1; }
+}
+@keyframes winCardPop{
+  from{ opacity: 0; transform: scale(.85); }
+  to{ opacity: 1; transform: scale(1); }
+}
+@keyframes trophyBounce{
+  0%,100%{ transform: translateY(0); }
+  50%{ transform: translateY(-6px); }
+  }
+           
