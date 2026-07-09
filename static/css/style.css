@@ -130,5 +130,4 @@ button{ font-family: inherit; cursor: pointer; }
 .home-footer{
   text-align:center; color: var(--muted); font-size: .78rem;
   padding: 1rem 0 2rem;
-}
-  
+                  }
