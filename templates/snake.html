@@ -1,0 +1,308 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>EvaSnake - EvaGames</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link href="https://fonts.googleapis.com/css2?family=Baloo+2:wght@700&family=Inter:wght@400;600&family=VT323&display=swap" rel="stylesheet">
+    <style>
+        body {
+            margin: 0;
+            padding: 0;
+            background: #0b0b0d;
+            font-family: 'Inter', sans-serif;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            min-height: 100vh;
+            color: #fff;
+            overflow: hidden;
+        }
+        .back-btn {
+            position: absolute;
+            top: 20px;
+            left: 20px;
+            color: #71717a;
+            text-decoration: none;
+            font-size: 14px;
+            display: flex;
+            align-items: center;
+            gap: 5px;
+            z-index: 10;
+        }
+        .back-btn:hover { color: #fff; }
+
+        /* ===== Retro Nokia Body Chassis ===== */
+        .nokia-container {
+            background: #272e3f;
+            border: 4px solid #1e2330;
+            border-radius: 40px/60px;
+            width: 320px;
+            padding: 35px 25px 25px;
+            box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.9), inset 0 4px 10px rgba(255,255,255,0.1);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+
+        /* Original Matrix Screen Case */
+        .screen-bezel {
+            background: #8b9388;
+            border: 12px solid #181c26;
+            border-radius: 8px;
+            padding: 10px;
+            box-shadow: inset 0 4px 8px rgba(0,0,0,0.4);
+            margin-bottom: 25px;
+            position: relative;
+        }
+
+        canvas {
+            background: #c2ccb9; /* Classic Nokia Green Screen Tint */
+            display: block;
+            image-rendering: pixelated;
+            border: 1px solid rgba(0,0,0,0.2);
+        }
+
+        /* High-Score Overlay inside bezel */
+        .score-box {
+            font-family: 'VT323', monospace;
+            color: #2b302a;
+            font-size: 22px;
+            display: flex;
+            justify-content: space-between;
+            padding-bottom: 4px;
+            border-bottom: 2px solid #2b302a;
+            margin-bottom: 6px;
+        }
+
+        /* ===== Phone Hardware Keypad Grid ===== */
+        .keypad {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 12px 16px;
+            width: 100%;
+            padding: 0 5px;
+        }
+
+        .key {
+            background: radial-gradient(circle at 50% 20%, #475166 0%, #313947 80%);
+            border: 1px solid #1a1e26;
+            border-radius: 12px 12px 18px 18px;
+            height: 48px;
+            color: #e2e8f0;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            user-select: none;
+            box-shadow: 0 4px 0 #181c26, 0 5px 10px rgba(0,0,0,0.5);
+            transition: transform 0.05s, box-shadow 0.05s;
+        }
+
+        .key:active {
+            transform: translateY(3px);
+            box-shadow: 0 1px 0 #181c26, 0 2px 4px rgba(0,0,0,0.5);
+        }
+
+        .key .num {
+            font-size: 18px;
+            font-weight: 700;
+            line-height: 1;
+        }
+
+        .key .letters {
+            font-size: 9px;
+            color: #94a3b8;
+            text-transform: uppercase;
+            margin-top: 1px;
+            letter-spacing: 0.5px;
+        }
+
+        /* Context highlighting arrows on layout controls */
+        .key.control-key {
+            background: radial-gradient(circle at 50% 20%, #d4a24c 0%, #b5832f 80%);
+            border-color: #785313;
+            box-shadow: 0 4px 0 #61420d, 0 5px 10px rgba(0,0,0,0.5);
+            color: #12101c;
+        }
+        .key.control-key .letters { color: #3a2908; font-weight: bold; }
+    </style>
+</head>
+<body>
+
+<a href="/" class="back-btn">← Shelf</a>
+
+<div class="nokia-container">
+    <div class="screen-bezel">
+        <div class="score-box">
+            <span>EvaSnake</span>
+            <span id="scoreDisplay">0000</span>
+        </div>
+        <canvas id="gameCanvas" width="240" height="240"></canvas>
+    </div>
+
+    <div class="keypad">
+        <div class="key" onclick="pressNum('1')"><span class="num">1</span><span class="letters">.,-</span></div>
+        <div class="key control-key" onclick="changeDirection('UP')"><span class="num">2</span><span class="letters">▲ ABC</span></div>
+        <div class="key" onclick="pressNum('3')"><span class="num">3</span><span class="letters">DEF</span></div>
+
+        <div class="key control-key" onclick="changeDirection('LEFT')"><span class="num">4</span><span class="letters">◀ GHI</span></div>
+        <div class="key" onclick="handleCenterButton()"><span class="num">5</span><span class="letters">JKL</span></div>
+        <div class="key control-key" onclick="changeDirection('RIGHT')"><span class="num">6</span><span class="letters">MNO ▶</span></div>
+
+        <div class="key" onclick="pressNum('7')"><span class="num">7</span><span class="letters">PQRS</span></div>
+        <div class="key control-key" onclick="changeDirection('DOWN')"><span class="num">8</span><span class="letters">▼ TUV</span></div>
+        <div class="key" onclick="pressNum('9')"><span class="num">9</span><span class="letters">WXYZ</span></div>
+
+        <div class="key" onclick="pressNum('*')"><span class="num">*</span><span class="letters">+</span></div>
+        <div class="key" onclick="changeDirection('DOWN')"><span class="num">0</span><span class="letters">␣</span></div>
+        <div class="key" onclick="resetGame()"><span class="num">#</span><span class="letters">⟲</span></div>
+    </div>
+</div>
+
+<script>
+const canvas = document.getElementById('gameCanvas');
+const ctx = canvas.getContext('2d');
+const scoreDisplay = document.getElementById('scoreDisplay');
+
+// Grid properties to simulate pixel graphics
+const GRID_SIZE = 12; 
+const TILE_COUNT = canvas.width / GRID_SIZE;
+
+let snake = [];
+let food = {};
+let dx = GRID_SIZE;
+let dy = 0;
+let score = 0;
+let gameInterval = null;
+let isGameOver = false;
+
+function init() {
+    snake = [
+        { x: GRID_SIZE * 5, y: GRID_SIZE * 10 },
+        { x: GRID_SIZE * 4, y: GRID_SIZE * 10 },
+        { x: GRID_SIZE * 3, y: GRID_SIZE * 10 }
+    ];
+    dx = GRID_SIZE;
+    dy = 0;
+    score = 0;
+    isGameOver = false;
+    updateScoreUI();
+    spawnFood();
+    
+    if (gameInterval) clearInterval(gameInterval);
+    gameInterval = setInterval(update, 120); // Retro tick-rate speed
+}
+
+function spawnFood() {
+    food.x = Math.floor(Math.random() * TILE_COUNT) * GRID_SIZE;
+    food.y = Math.floor(Math.random() * TILE_COUNT) * GRID_SIZE;
+    
+    // Check if food spawned inside the snake body
+    snake.forEach(part => {
+        if (part.x === food.x && part.y === food.y) spawnFood();
+    });
+}
+
+function update() {
+    if (isGameOver) return;
+
+    // Movement engine step
+    const head = { x: snake[0].x + dx, y: snake[0].y + dy };
+
+    // Game Over Conditions (Hit edges or tail)
+    if (head.x < 0 || head.x >= canvas.width || head.y < 0 || head.y >= canvas.height || checkTailCollision(head)) {
+        isGameOver = true;
+        clearInterval(gameInterval);
+        draw();
+        return;
+    }
+
+    snake.unshift(head);
+
+    // Check food consumption
+    if (head.x === food.x && head.y === food.y) {
+        score += 10;
+        updateScoreUI();
+        spawnFood();
+    } else {
+        snake.pop();
+    }
+
+    draw();
+}
+
+function checkTailCollision(head) {
+    for (let i = 1; i < snake.length; i++) {
+        if (snake[i].x === head.x && snake[i].y === head.y) return true;
+    }
+    return false;
+}
+
+function draw() {
+    // Fill background with matrix tint tint
+    ctx.fillStyle = '#c2ccb9';
+    ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+    // Render Nokia Styled Pixel Snake
+    ctx.fillStyle = '#2b302a';
+    snake.forEach((part, index) => {
+        // Draw segment slightly smaller to simulate screen grid spacing
+        ctx.fillRect(part.x + 1, part.y + 1, GRID_SIZE - 2, GRID_SIZE - 2);
+    });
+
+    // Render Target Objective Pixel
+    ctx.fillRect(food.x + 2, food.y + 2, GRID_SIZE - 4, GRID_SIZE - 4);
+
+    if (isGameOver) {
+        ctx.font = "26px 'VT323'";
+        ctx.fillStyle = '#2b302a';
+        ctx.textAlign = "center";
+        ctx.fillText("GAME OVER", canvas.width / 2, canvas.height / 2 - 10);
+        ctx.font = "16px 'VT323'";
+        ctx.fillText("Press # to Reset", canvas.width / 2, canvas.height / 2 + 15);
+    }
+}
+
+function updateScoreUI() {
+    scoreDisplay.innerText = String(score).padStart(4, '0');
+}
+
+// Controller Processing Logic
+function changeDirection(dir) {
+    if (isGameOver) return;
+    
+    if (dir === 'UP' && dy === 0) { dx = 0; dy = -GRID_SIZE; }
+    if (dir === 'DOWN' && dy === 0) { dx = 0; dy = GRID_SIZE; }
+    if (dir === 'LEFT' && dx === 0) { dx = -GRID_SIZE; dy = 0; }
+    if (dir === 'RIGHT' && dx === 0) { dx = GRID_SIZE; dy = 0; }
+}
+
+function handleCenterButton() {
+    if (isGameOver) init();
+}
+
+function resetGame() {
+    init();
+}
+
+function pressNum(num) {
+    console.log(`Keypad button ${num} clicked.`);
+}
+
+// Keyboard arrow controls integration fallback
+window.addEventListener('keydown', (e) => {
+    if (e.key === 'ArrowUp') changeDirection('UP');
+    if (e.key === 'ArrowDown') changeDirection('DOWN');
+    if (e.key === 'ArrowLeft') changeDirection('LEFT');
+    if (e.key === 'ArrowRight') changeDirection('RIGHT');
+});
+
+init();
+</script>
+</body>
+  </html>
+  
