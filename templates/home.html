@@ -3,56 +3,91 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>EvaGames</title>
+<title>EvaLudo</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Baloo+2:wght@500;700;800&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+<link rel="stylesheet" href="{{ url_for('static', filename='css/ludo.css') }}">
 </head>
-<body class="home-body">
+<body class="ludo-body">
 
-  <header class="home-hero">
-    <div class="die-stack" aria-hidden="true">
-      <div class="die die-a">
-        <span></span><span></span><span></span><span></span><span></span><span></span>
-      </div>
-      <div class="die die-b">
-        <span></span><span></span><span></span>
-      </div>
+<a class="back-link" href="/">← EvaGames</a>
+
+<!-- ============ SETUP ============ -->
+<section id="setup-view" class="setup-view">
+
+  <h1 class="game-title">🎲 EvaLudo</h1>
+
+  <div class="setup-card">
+    <p class="setup-step-label">Step 1 — Connection</p>
+    <div class="choice-row" id="mode-choice">
+      <button class="choice-btn active" data-mode="offline">
+        <strong>Offline</strong>
+        <span>Play on this device</span>
+      </button>
+      <button class="choice-btn" data-mode="online" disabled>
+        <strong>Online</strong>
+        <span>Coming soon</span>
+      </button>
     </div>
-    <p class="eyebrow">EvaGames Arcade</p>
-    <h1>Pick a cartridge.<br>Press start.</h1>
-    <p class="hero-sub">A little shelf of games built for slow evenings and long bus rides. Offline-first, no accounts, no fuss.</p>
-  </header>
+  </div>
 
-  <main class="shelf">
-    {% for game in games %}
-      {% if game.status == "playable" %}
-        <a class="cartridge" href="{{ game.route }}">
-          <div class="cartridge-top">
-            <span class="cartridge-icon">{{ game.icon }}</span>
-            <span class="cartridge-tag">Ready to play</span>
-          </div>
-          <h2>{{ game.name }}</h2>
-          <p>{{ game.tagline }}</p>
-          <span class="cartridge-cta">Insert cartridge →</span>
-        </a>
-      {% else %}
-        <div class="cartridge cartridge-locked">
-          <div class="cartridge-top">
-            <span class="cartridge-icon">{{ game.icon }}</span>
-            <span class="cartridge-tag">In the works</span>
-          </div>
-          <h2>{{ game.name }}</h2>
-          <p>{{ game.tagline }}</p>
-          <span class="cartridge-cta">Coming soon</span>
-        </div>
-      {% endif %}
-    {% endfor %}
-  </main>
+  <div class="setup-card">
+    <p class="setup-step-label">Step 2 — Who's playing</p>
+    <div class="choice-row" id="players-choice">
+      <button class="choice-btn active" data-players="single">
+        <strong>Single player</strong>
+        <span>You vs. computer</span>
+      </button>
+      <button class="choice-btn" data-players="local">
+        <strong>Pass &amp; play</strong>
+        <span>Take turns on this device</span>
+      </button>
+    </div>
+  </div>
 
-  <footer class="home-footer">
-    <p>Built by Mahabul · EvaGames</p>
-  </footer>
+  <div class="setup-card">
+    <p class="setup-step-label">Step 3 — How many tokens on the board</p>
+    <div class="choice-row four" id="count-choice">
+      <button class="choice-btn" data-count="2">2</button>
+      <button class="choice-btn active" data-count="4">4</button>
+    </div>
+  </div>
 
+  <div class="setup-card" id="color-card">
+    <p class="setup-step-label">Step 4 — Assign colors</p>
+    <div class="seat-list" id="seat-list"></div>
+  </div>
+
+  <button class="start-btn" id="start-btn">Start game</button>
+</section>
+
+<!-- ============ GAME ============ -->
+<section id="game-view" class="game-view hidden">
+
+  <div class="hud-top">
+    <button class="hud-quit" id="mute-btn" title="Mute/unmute sound">🔊</button>
+    <button class="hud-quit" id="quit-btn" title="Back to setup">⟲</button>
+  </div>
+
+  <div class="board-wrap">
+    <div id="board" class="board"></div>
+  </div>
+
+  <div class="player-dice-list" id="player-dice-list"></div>
+
+</section>
+
+<!-- ============ WIN OVERLAY ============ -->
+<div id="win-overlay" class="win-overlay hidden">
+  <div class="win-card">
+    <p class="win-emoji">🏆</p>
+    <h2 id="win-text">Winner!</h2>
+    <button id="win-restart" class="start-btn">Play again</button>
+  </div>
+</div>
+
+<script src="{{ url_for('static', filename='js/ludo.js') }}"></script>
 </body>
-</html>
+  </html>
+  
